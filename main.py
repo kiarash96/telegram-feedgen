@@ -1,9 +1,11 @@
-import re
+#!/usr/bin/env python3
 
-import config
+import re
 
 from telethon import TelegramClient
 from telethon.tl.functions.channels import JoinChannelRequest
+
+import config
 
 
 def add_channel(client, username):
