@@ -3,17 +3,38 @@
 import re
 
 from telethon import TelegramClient
-from telethon.tl.functions.channels import JoinChannelRequest
+import telethon.tl.functions as functions
+import telethon.tl.types as types
+
+from feedgen.feed import FeedGenerator
 
 import config
 
 
+feeds = {}
+
+
 def add_channel(client, username):
-    channel = client.get_entity(username)
-    try:
-        client.invoke(JoinChannelRequest(channel))
-    except ValueError:
-        print("Wrong username {}!".format(username))
+    result = client.invoke(functions.contacts.ResolveUsernameRequest(username))
+    if not isinstance(result.peer, types.PeerChannel):
+        print("Wrong username " + username)
+        return
+
+    channel = result.chats[0]
+
+    if channel.id in feeds:
+        print("Already joined channel " + username)
+        return
+
+    full_channel = client.invoke(functions.channels.GetFullChannelRequest(channel)).full_chat
+
+    fg = FeedGenerator()
+    fg.title(channel.title)
+    fg.link(href='https://t.me/' + username, rel='via')
+    fg.description(full_channel.about)
+    feeds[channel.id] = fg
+
+    client.invoke(functions.channels.JoinChannelRequest(channel))
 
 
 def handle_update(update):
